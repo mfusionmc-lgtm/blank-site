@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff" id="themeColor">
+<title>Xeno AI</title>
+<link rel="icon" href="xeno.png">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>try{tailwind.config={darkMode:'class'}}catch(e){}</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<style>
+:root{--bg:#fff;--side:#f0f4f9;--text:#1f1f1f;--muted:#5f6368;--hover:#e1e6ec;--user:#e9eef6;--border:#e3e3e3;--accent:#0b57d0;--code:#f6f8fa;--input:#f0f4f9}
+.dark{--bg:#131314;--side:#1e1f20;--text:#e3e3e3;--muted:#9aa0a6;--hover:#333537;--user:#282a2c;--border:#333537;--accent:#a8c7fa;--code:#1a1b1c;--input:#1e1f20}
+*{-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Google Sans',Roboto,'Segoe UI',system-ui,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+button:focus-visible,textarea:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#loading{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:var(--bg,#fff);color:#5f6368;font-size:16px;padding:24px;text-align:center}
+#sidebar{position:fixed;top:0;bottom:0;left:0;width:288px;max-width:85vw;height:100dvh;z-index:40;background:var(--side);display:flex;flex-direction:column;transition:transform .25s ease;transform:translateX(-100%);padding-top:env(safe-area-inset-top)}
+#overlay{display:none;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.4)}
+.side-open #sidebar{transform:none}.side-open #overlay{display:block}
+@media(min-width:768px){#sidebar{transform:none}#main{margin-left:288px}#menuBtn,#overlay{display:none!important}}
+#main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+#topbar{position:sticky;top:0;z-index:20;background:var(--bg);padding:calc(8px + env(safe-area-inset-top)) 12px 8px;display:flex;align-items:center;gap:8px}
+#inputWrap{position:sticky;bottom:0;z-index:20;background:var(--bg);padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
+.icon-btn{width:40px;height:40px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+.icon-btn:hover,.item:hover,.side-btn:hover{background:var(--hover)}
+.side-btn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 14px;border-radius:999px;font-size:14px}
+.item{display:flex;align-items:center;border-radius:999px;margin:1px 8px}
+.item.on{background:var(--hover)}
+.item .t{flex:1;min-width:0;text-align:left;padding:9px 6px 9px 14px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .a{width:30px;height:30px;border-radius:999px;color:var(--muted);font-size:14px;flex:none}
+.item .a:hover{background:var(--border);color:var(--text)}
+.grad{background:linear-gradient(90deg,#4285f4,#9b72cb,#d96570);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.bubble{background:var(--user);border-radius:20px 20px 4px 20px;padding:10px 16px;max-width:85%;white-space:pre-wrap;word-break:break-word;line-height:1.55}
+.ai-av{width:32px;height:32px;flex:none;border-radius:50%;overflow:hidden;margin-top:2px;background:#fff;border:1px solid var(--border)}
+.ai-av img{width:100%;height:100%;object-fit:cover}
+.md{min-width:0;flex:1;line-height:1.65;word-break:break-word;overflow-wrap:anywhere}
+.md>*:first-child{margin-top:0}.md>*:last-child{margin-bottom:0}
+.md p,.md ul,.md ol,.md pre,.md table,.md blockquote{margin:.7em 0}
+.md ul{list-style:disc;padding-left:1.4em}.md ol{list-style:decimal;padding-left:1.4em}
+.md h1,.md h2,.md h3{font-weight:600;margin:1em 0 .4em;line-height:1.3}.md h1{font-size:1.4em}.md h2{font-size:1.2em}.md h3{font-size:1.05em}
+.md a{color:var(--accent);text-decoration:underline}
+.md blockquote{border-left:3px solid var(--border);padding-left:12px;color:var(--muted)}
+.md code{background:var(--code);border-radius:6px;padding:.15em .4em;font-size:.88em;font-family:ui-monospace,Menlo,Consolas,monospace}
+.md pre{position:relative;background:var(--code);border:1px solid var(--border);border-radius:12px;padding:14px;overflow-x:auto}
+.md pre code{background:none;padding:0;font-size:.85em}
+.md .cp{position:absolute;top:6px;right:6px;font-size:12px;padding:3px 10px;border-radius:999px;background:var(--hover);color:var(--text)}
+.md table{display:block;overflow-x:auto;border-collapse:collapse}.md th,.md td{border:1px solid var(--border);padding:6px 10px}
+.caret{display:inline-block;width:8px;height:1em;vertical-align:text-bottom;background:var(--accent);margin-left:2px;animation:bl 1s steps(2) infinite}
+@keyframes bl{50%{opacity:0}}
+.dots i{display:inline-block;width:8px;height:8px;margin-right:5px;border-radius:50%;background:var(--muted);animation:dt 1.2s infinite}
+.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes dt{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.err{color:#d93025;font-size:14px;margin-top:8px}.dark .err{color:#f28b82}
+.chip{border:1px solid var(--border);background:var(--side);border-radius:16px;padding:12px 16px;font-size:14px;text-align:left}.chip:hover{background:var(--hover)}
+.box{display:flex;align-items:flex-end;gap:6px;background:var(--input);border-radius:28px;padding:6px 6px 6px 18px;max-width:768px;margin:0 auto}
+#input{flex:1;resize:none;background:transparent;border:0;outline:0;color:var(--text);font:inherit;font-size:16px;line-height:1.5;padding:9px 0;max-height:160px}
+#input::placeholder{color:var(--muted)}
+#sendBtn{background:var(--accent);color:var(--bg)}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal.hidden{display:none}
+.card{background:var(--bg);color:var(--text);width:100%;max-width:480px;max-height:90dvh;overflow-y:auto;border-radius:24px;padding:22px;border:1px solid var(--border)}
+.card label{display:block;font-size:13px;color:var(--muted);margin:14px 0 4px}
+.card input,.card textarea,.card select{width:100%;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:16px;font-family:inherit}
+.btn{border-radius:999px;padding:9px 20px;font-size:14px}.btn.p{background:var(--accent);color:var(--bg)}.btn:hover{opacity:.9}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#303030;color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;z-index:90;display:none;max-width:90vw}
+/* --- LOGO ONLY - NO FUNCTION CHANGE --- */
+.logo-img{width:36px;height:36px;border-radius:10px;object-fit:cover;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.logo-img-big{width:52px;height:52px;border-radius:14px;object-fit:cover;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.sidebar-logo{display:flex;align-items:center;gap:10px;padding:14px 14px 6px}
+.sidebar-logo b{font-size:22px;letter-spacing:1px}
+.sidebar-logo span{font-size:11px;color:var(--muted);display:block;letter-spacing:2px}
+.welcome-logo{width:84px;height:84px;border-radius:22px;object-fit:cover;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="loading"><img src="xeno.png" style="width:64px;height:64px;border-radius:16px;margin-right:12px;" onerror="this.style.display='none'"> Loading Xeno AI...</div>
+<div id="overlay"></div>
+
+<aside id="sidebar" aria-label="Chat history">
+  <div class="sidebar-logo">
+    <img src="xeno.png" class="logo-img-big" alt="Xeno AI Logo" onerror="this.style.display='none'">
+    <div><b>XENO</b><span>ARTIFICIAL INTELLIGENCE</span></div>
+  </div>
+  <div style="padding:12px 8px 6px">
+    <button id="newBtn" class="side-btn" style="background:var(--hover);font-weight:500"><span style="font-size:18px">＋</span> New chat</button>
+  </div>
+  <div id="list" style="flex:1;overflow-y:auto;padding:6px 0"></div>
+  <div style="padding:8px;border-top:1px solid var(--border);padding-bottom:calc(8px + env(safe-area-inset-bottom))">
+    <button id="sysBtn" class="side-btn">🧠 System prompt</button>
+    <button id="setBtn" class="side-btn">⚙️ Settings</button>
+    <button id="themeBtn2" class="side-btn">🌙 Dark mode</button>
+  </div>
+</aside>
+
+<div id="main">
+  <header id="topbar">
+    <button id="menuBtn" class="icon-btn" aria-label="Open menu">☰</button>
+    <img src="xeno.png" class="logo-img" alt="Xeno Logo" onerror="this.style.display='none'">
+    <div style="font-size:20px;font-weight:500" class="grad">Xeno AI</div>
+    <div id="modelTag" style="margin-left:auto;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40vw"></div>
+    <button id="themeBtn" class="icon-btn" aria-label="Toggle dark mode">🌙</button>
+  </header>
+  <section style="flex:1;width:100%;max-width:768px;margin:0 auto;padding:8px 16px 16px">
+    <div id="messages"></div>
+  </section>
+  <footer id="inputWrap">
+    <div class="box">
+      <textarea id="input" rows="1" placeholder="Ask Xeno AI" aria-label="Message"></textarea>
+      <button id="sendBtn" class="icon-btn" aria-label="Send">➤</button>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:6px">Xeno AI can make mistakes. Check important info.</div>
+  </footer>
+</div>
+
+<div id="m-settings" class="modal hidden"><div class="card">
+  <div style="display:flex;align-items:center;gap:12px"><img src="xeno.png" style="width:44px;height:44px;border-radius:12px;object-fit:cover" onerror="this.style.display='none'"><h2 style="font-size:20px;font-weight:500;margin:0">Settings</h2></div>
+  <label for="keyIn">OpenRouter API key</label>
+  <input id="keyIn" type="password" autocomplete="off" placeholder="sk-or-...">
+  <label for="modelIn">Model name</label>
+  <input id="modelIn" type="text" autocomplete="off" placeholder="deepseek/deepseek-r1:free">
+  <p style="font-size:12px;color:var(--muted);margin:10px 0 0">Stored only in this browser (localStorage). Get a key at openrouter.ai/keys.</p>
+  <div style="display:flex;gap:8px;justify-content:space-between;margin-top:18px;flex-wrap:wrap">
+    <button class="btn" id="clearAll" style="color:#d93025">Delete all chats</button>
+    <span><button class="btn" data-close>Cancel</button> <button class="btn p" id="saveSet">Save</button></span>
+  </div>
+</div></div>
+
+<div id="m-sys" class="modal hidden"><div class="card">
+  <h2 style="font-size:20px;font-weight:500;margin:0 0 4px">System prompt</h2>
+  <label for="sysIn">Instructions that guide every reply</label>
+  <textarea id="sysIn" rows="6" placeholder="You are a helpful assistant..."></textarea>
+  <label for="sysScope">Apply to</label>
+  <select id="sysScope"><option value="global">All chats (default)</option><option value="chat">This chat only</option></select>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">
+    <button class="btn" data-close>Cancel</button> <button class="btn p" id="saveSys">Save</button>
+  </div>
+</div></div>
+
+<div id="toast" role="status"></div>
+
+<script>
+(function () {
+  'use strict';
+  var URL_API = 'https://openrouter.ai/api/v1/chat/completions';
+  var $ = function (id) { return document.getElementById(id); };
+  var LS = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  var S = { chats: [], activeId: null, key: '', model: 'deepseek/deepseek-r1:free', system: '', theme: 'light' };
+  var busy = false, current = null;
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function on(id, ev, fn) { var el = $(id); if (el) el.addEventListener(ev, fn); }
+  function toast(msg) { var t = $('toast'); if (!t) return; t.textContent = msg; t.style.display = 'block'; clearTimeout(toast._t); toast._t = setTimeout(function () { t.style.display = 'none'; }, 3200); }
+
+  function load() {
+    S.key = LS.get('xeno_key', '');
+    S.model = LS.get('xeno_model', '') || 'deepseek/deepseek-r1:free';
+    S.system = LS.get('xeno_system', '');
+    S.theme = LS.get('xeno_theme', 'light') === 'dark' ? 'dark' : 'light';
+    try {
+      var c = JSON.parse(LS.get('xeno_chats', '[]'));
+      if (Array.isArray(c)) S.chats = c.filter(function (x) { return x && typeof x === 'object' && x.id; }).map(function (x) {
+        return { id: String(x.id), title: String(x.title || 'New chat'), system: String(x.system || ''), updated: +x.updated || 0,
+          messages: Array.isArray(x.messages) ? x.messages.filter(function (m) { return m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string'; }) : [] };
+      });
+    } catch (e) { S.chats = []; }
+    var a = LS.get('xeno_active', '');
+    S.activeId = S.chats.some(function (c) { return c.id === a; }) ? a : null;
+  }
+  function save() { LS.set('xeno_chats', JSON.stringify(S.chats)); LS.set('xeno_active', S.activeId || ''); }
+  function active() { for (var i = 0; i < S.chats.length; i++) if (S.chats[i].id === S.activeId) return S.chats[i]; return null; }
+  function newChat() {
+    var cur = active();
+    if (cur && !cur.messages.length) return cur;
+    var c = { id: uid(), title: 'New chat', messages: [], system: '', updated: Date.now() };
+    S.chats.unshift(c); S.activeId = c.id; save(); return c;
+  }
+
+  function applyTheme() {
+    var d = S.theme === 'dark';
+    document.documentElement.classList.toggle('dark', d);
+    var m = $('themeColor'); if (m) m.setAttribute('content', d ? '#131314' : '#ffffff');
+    var b = $('themeBtn'); if (b) b.textContent = d ? '☀️' : '🌙';
+    var b2 = $('themeBtn2'); if (b2) b2.textContent = d ? '☀️ Light mode' : '🌙 Dark mode';
+  }
+  function toggleTheme() { S.theme = S.theme === 'dark' ? 'light' : 'dark'; LS.set('xeno_theme', S.theme); applyTheme(); }
+  function side(open) { document.body.classList.toggle('side-open', !!open); }
+
+  function setMd(el, text) {
+    var html;
+    try {
+      html = (window.marked && marked.parse) ? marked.parse(text, { gfm: true, breaks: true }) : esc(text).replace(/\n/g, '<br>');
+      if (window.DOMPurify) html = DOMPurify.sanitize(html);
+    } catch (e) { html = esc(text).replace(/\n/g, '<br>'); }
+    el.innerHTML = html;
+    var pres = el.querySelectorAll('pre');
+    for (var i = 0; i < pres.length; i++) {
+      var b = document.createElement('button'); b.className = 'cp'; b.type = 'button'; b.textContent = 'Copy'; pres[i].appendChild(b);
+    }
+    var as = el.querySelectorAll('a');
+    for (var j = 0; j < as.length; j++) { as[j].target = '_blank'; as[j].rel = 'noopener noreferrer'; }
+  }
+  function copyText(t, btn) {
+    function ok() { if (btn) { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1500); } }
+    try { navigator.clipboard.writeText(t).then(ok, function () { fallback(); }); } catch (e) { fallback(); }
+    function fallback() {
+      try { var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); ok(); } catch (e) { toast('Copy failed'); }
+    }
+  }
+
+  function renderList() {
+    var box = $('list'); if (!box) return; box.innerHTML = '';
+    var arr = S.chats.slice().sort(function (a, b) { return b.updated - a.updated; });
+    if (!arr.length) { var e = document.createElement('div'); e.style.cssText = 'padding:12px 22px;font-size:13px;color:var(--muted)'; e.textContent = 'No chats yet'; box.appendChild(e); }
+    arr.forEach(function (c) {
+      var row = document.createElement('div'); row.className = 'item' + (c.id === S.activeId ? ' on' : '');
+      var t = document.createElement('button'); t.className = 't'; t.textContent = c.title; t.title = c.title;
+      t.addEventListener('click', function () { selectChat(c.id); });
+      var r = document.createElement('button'); r.className = 'a'; r.textContent = '✎'; r.title = 'Rename'; r.setAttribute('aria-label', 'Rename chat');
+      r.addEventListener('click', function () { renameChat(c.id); });
+      var d = document.createElement('button'); d.className = 'a'; d.textContent = '🗑'; d.title = 'Delete'; d.setAttribute('aria-label', 'Delete chat');
+      d.addEventListener('click', function () { deleteChat(c.id); });
+      row.appendChild(t); row.appendChild(r); row.appendChild(d); box.appendChild(row);
+    });
+  }
+  function userRow(text) {
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;justify-content:flex-end;margin:18px 0';
+    var b = document.createElement('div'); b.className = 'bubble'; b.textContent = text; row.appendChild(b); return row;
+  }
+  function aiRow(text) {
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:12px;margin:18px 0';
+    var av = document.createElement('div'); av.className = 'ai-av';
+    var img = document.createElement('img'); img.src = 'xeno.png'; img.alt = 'Xeno AI'; img.onerror = function(){ av.textContent='✦'; av.style.fontSize='20px'; av.style.textAlign='center'; av.style.lineHeight='32px'; };
+    av.appendChild(img);
+    var md = document.createElement('div'); md.className = 'md';
+    if (text != null) setMd(md, text);
+    row.appendChild(av); row.appendChild(md); return { row: row, md: md };
+  }
+  function renderMessages() {
+    var box = $('messages'); if (!box) return; box.innerHTML = '';
+    var c = active();
+    if (!c || !c.messages.length) {
+      var w = document.createElement('div'); w.style.cssText = 'padding-top:8vh;text-align:left';
+      w.innerHTML = '<img src="xeno.png" class="welcome-logo" onerror="this.style.display=\'none\'">' +
+        '<div class="grad" style="font-size:clamp(34px,8vw,52px);font-weight:500;line-height:1.15">Hello there</div>' +
+        '<div style="font-size:clamp(28px,6vw,44px);color:var(--muted);font-weight:500;line-height:1.2;margin-bottom:28px">How can I help you today?</div>' +
+        '<div id="chips" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px"></div>';
+      box.appendChild(w);
+      ['Explain quantum computing simply', 'Write a Python function to reverse a string', 'Give me 5 ideas for a weekend project', 'Summarize the plot of Hamlet'].forEach(function (s) {
+        var b = document.createElement('button'); b.className = 'chip'; b.textContent = s; b.addEventListener('click', function () { send(s); });
+        w.querySelector('#chips').appendChild(b);
+      });
+      return;
+    }
+    c.messages.forEach(function (m) { box.appendChild(m.role === 'user' ? userRow(m.content) : aiRow(m.content).row); });
+  }
+  function nearBottom() { return (window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 160; }
+  function toBottom() { window.scrollTo(0, document.documentElement.scrollHeight); }
+  function updateUI() {
+    var b = $('sendBtn'); if (b) { b.textContent = busy ? '■' : '➤'; b.setAttribute('aria-label', busy ? 'Stop' : 'Send'); }
+    var m = $('modelTag'); if (m) m.textContent = S.model;
+  }
+
+  function selectChat(id) { stop(); S.activeId = id; save(); renderList(); renderMessages(); side(false); window.scrollTo(0, 0); }
+  function startNew() { stop(); S.activeId = null; var c = newChat(); renderList(); renderMessages(); side(false); var i = $('input'); if (i && c) i.focus(); }
+  function renameChat(id) {
+    var c = S.chats.filter(function (x) { return x.id === id; })[0]; if (!c) return;
+    var n = window.prompt('Rename chat', c.title);
+    if (n && n.trim()) { c.title = n.trim().slice(0, 80); save(); renderList(); }
+  }
+  function deleteChat(id) {
+    if (!window.confirm('Delete this chat?')) return;
+    if (id === S.activeId) stop();
+    S.chats = S.chats.filter(function (x) { return x.id !== id; });
+    if (S.activeId === id) S.activeId = S.chats.length ? S.chats[0].id : null;
+    save(); renderList(); renderMessages();
+  }
+
+  function ApiErr(m) { this.message = m; }
+  ApiErr.prototype = Object.create(Error.prototype);
+  function errText(status, body) {
+    var msg = ''; try { var j = JSON.parse(body); msg = (j.error && (j.error.message || j.error)) || j.message || ''; } catch (e) { msg = (body || '').slice(0, 200); }
+    if (status === 401) return 'Invalid or missing API key. Open Settings and check your OpenRouter key.';
+    if (status === 402) return 'Insufficient credits for this model. Pick a free model or add credits.';
+    if (status === 429) return 'Rate limited. Wait a moment and try again.';
+    return 'Request failed (' + status + ')' + (msg ? ': ' + (typeof msg === 'string' ? msg : JSON.stringify(msg)) : '');
+  }
+  function stop() { if (current) current.abort(); }
+
+  function send(text) {
+    if (busy) return;
+    text = (text || '').trim(); if (!text) return;
+    if (!S.key) { openModal('m-settings'); toast('Add your OpenRouter API key first'); return; }
+    var c = active() || newChat();
+    c.messages.push({ role: 'user', content: text });
+    if (c.messages.length === 1) c.title = text.slice(0, 40);
+    c.updated = Date.now(); save(); renderList(); renderMessages();
+    var ai = aiRow(null); ai.md.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
+    $('messages').appendChild(ai.row); toBottom();
+    run(c, ai.md);
+  }
+
+  function run(chat, el) {
+    busy = true; updateUI();
+    var q = '', shown = '', streamDone = false, aborted = false, error = null, last = 0;
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    current = { abort: function () { aborted = true; if (ctrl) { try { ctrl.abort(); } catch (e) {} } } };
+
+    function paint(final) {
+      if (!shown) return;
+      var nb = nearBottom();
+      setMd(el, shown);
+      if (!final) { var cr = document.createElement('span'); cr.className = 'caret'; var host = el.lastElementChild && el.lastElementChild.tagName !== 'PRE' ? el.lastElementChild : el; host.appendChild(cr); }
+      if (nb && state_active(chat)) toBottom();
+    }
+    function tick(ts) {
+      if (aborted) q = '';
+      if (q.length) {
+        var n = Math.max(1, Math.ceil(q.length / 15));
+        shown += q.slice(0, n); q = q.slice(n);
+        if (ts - last > 40 || !q.length) { last = ts; paint(false); }
+      }
+      if (streamDone && !q.length) { finish(); return; }
+      requestAnimationFrame(tick);
+    }
+    function finish() {
+      paint(true);
+      if (shown) chat.messages.push({ role: 'assistant', content: shown });
+      if (error) {
+        if (!shown) el.innerHTML = '';
+        var d = document.createElement('div'); d.className = 'err'; d.textContent = error; el.appendChild(d);
+        if (!shown) chat.messages.pop();
+        if (!shown) { var inp = $('input'); if (inp && !inp.value) { inp.value = lastUser; autosize(); } }
+      }
+      chat.updated = Date.now(); save(); renderList();
+      busy = false; current = null; updateUI();
+    }
+    var lastUser = chat.messages.length ? chat.messages[chat.messages.length - 1].content : '';
+
+    var msgs = [], sys = chat.system || S.system;
+    if (sys) msgs.push({ role: 'system', content: sys });
+    chat.messages.forEach(function (m) { msgs.push({ role: m.role, content: m.content }); });
+
+    requestAnimationFrame(tick);
+    (async function () {
+      try {
+        var res = await fetch(URL_API, {
+          method: 'POST', signal: ctrl ? ctrl.signal : undefined,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + S.key, 'HTTP-Referer': location.origin || 'https://localhost', 'X-Title': 'Xeno AI' },
+          body: JSON.stringify({ model: S.model, messages: msgs, stream: true })
+        });
+        if (!res.ok) { var b = ''; try { b = await res.text(); } catch (e) {} throw new ApiErr(errText(res.status, b)); }
+        if (!res.body || !res.body.getReader) {
+          var j0 = await res.json(); var c0 = j0 && j0.choices && j0.choices[0];
+          q += (c0 && c0.message && c0.message.content) || '';
+        } else {
+          var rd = res.body.getReader(), dec = new TextDecoder(), buf = '';
+          while (true) {
+            var r = await rd.read(); if (r.done) break;
+            buf += dec.decode(r.value, { stream: true });
+            var lines = buf.split('\n'); buf = lines.pop();
+            for (var i = 0; i < lines.length; i++) {
+              var ln = lines[i].trim();
+              if (!ln || ln.charAt(0) === ':' || ln.indexOf('data:') !== 0) continue;
+              var data = ln.slice(5).trim(); if (data === '[DONE]') continue;
+              try {
+                var j = JSON.parse(data);
+                if (j && j.error) throw new ApiErr(typeof j.error === 'string' ? j.error : (j.error.message || 'Stream error'));
+                var ch = j && j.choices && j.choices[0];
+                var t = ch && ch.delta && ch.delta.content;
+                if (typeof t === 'string') q += t;
+              } catch (e) { if (e instanceof ApiErr) throw e; }
+            }
+          }
+        }
+        if (!q && !shown) error = 'The model returned an empty reply. Try again or choose another model.';
+      } catch (e) {
+        if (!(e && e.name === 'AbortError') && !aborted) error = (e instanceof ApiErr) ? e.message : 'Network error. Check your connection and try again.';
+      }
+      streamDone = true;
+    })();
+  }
+  function state_active(chat) { return S.activeId === chat.id; }
+
+  function openModal(id) {
+    var m = $(id); if (!m) return;
+    if (id === 'm-settings') { $('keyIn').value = S.key; $('modelIn').value = S.model; }
+    if (id === 'm-sys') {
+      var c = active(); var sc = $('sysScope');
+      if (c && c.system) { sc.value = 'chat'; $('sysIn').value = c.system; } else { sc.value = 'global'; $('sysIn').value = S.system; }
+    }
+    m.classList.remove('hidden'); side(false);
+  }
+  function closeModals() { var ms = document.querySelectorAll('.modal'); for (var i = 0; i < ms.length; i++) ms[i].classList.add('hidden'); }
+  function autosize() { var t = $('input'); if (!t) return; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 160) + 'px'; }
+
+  function init() {
+    load(); applyTheme(); renderList(); renderMessages(); updateUI();
+    on('newBtn', 'click', startNew);
+    on('menuBtn', 'click', function () { side(true); });
+    on('overlay', 'click', function () { side(false); });
+    on('themeBtn', 'click', toggleTheme); on('themeBtn2', 'click', toggleTheme);
+    on('setBtn', 'click', function () { openModal('m-settings'); });
+    on('sysBtn', 'click', function () { openModal('m-sys'); });
+    on('saveSet', 'click', function () {
+      S.key = $('keyIn').value.trim(); S.model = $('modelIn').value.trim() || 'deepseek/deepseek-r1:free';
+      LS.set('xeno_key', S.key); LS.set('xeno_model', S.model); updateUI(); closeModals(); toast('Settings saved');
+    });
+    on('saveSys', 'click', function () {
+      var v = $('sysIn').value.trim(), c = active();
+      if ($('sysScope').value === 'chat') {
+        if (!c) c = newChat();
+        c.system = v; save(); renderList();
+      } else { S.system = v; LS.set('xeno_system', v); if (c) { c.system = ''; save(); } }
+      closeModals(); toast('System prompt saved');
+    });
+    on('clearAll', 'click', function () {
+      if (!window.confirm('Delete ALL chats? This cannot be undone.')) return;
+      stop(); S.chats = []; S.activeId = null; save(); renderList(); renderMessages(); closeModals();
+    });
+    var mods = document.querySelectorAll('.modal');
+    for (var i = 0; i < mods.length; i++) mods[i].addEventListener('click', function (e) { if (e.target === this || (e.target.hasAttribute && e.target.hasAttribute('data-close'))) closeModals(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModals(); side(false); } });
+    on('messages', 'click', function (e) {
+      var b = e.target; if (b && b.classList && b.classList.contains('cp')) { var pre = b.parentNode, code = pre && pre.querySelector('code'); copyText(((code || pre).textContent || ''), b); }
+    });
+    var inp = $('input');
+    if (inp) {
+      inp.addEventListener('input', autosize);
+      inp.addEventListener('keydown', function (e) {
+        var touch = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !touch) { e.preventDefault(); submit(); }
+      });
+    }
+    on('sendBtn', 'click', function () { if (busy) stop(); else submit(); });
+    function submit() { var t = $('input'); if (!t || busy) return; var v = t.value; if (!v.trim()) return; t.value = ''; autosize(); send(v); }
+    if (!S.key) setTimeout(function () { if (!S.key) toast('Tap ⚙️ Settings to add your OpenRouter key'); }, 800);
+  }
+
+  var loader = $('loading');
+  try { init(); if (loader) loader.style.display = 'none'; }
+  catch (e) { if (loader) loader.textContent = 'Failed to start: ' + (e && e.message ? e.message : e); try { console.error(e); } catch (x) {} }
+})();
+</script>
+</body>
+</html>
